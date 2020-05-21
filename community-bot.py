@@ -11,6 +11,7 @@ from config import TOKEN
 from datetime import datetime
 from datetime import timedelta
 
+UTC_OFFSET = 4
 MORNING_CIRCLE_CHANNEL = 712816699765948427
 DEFAULT_HOUR = 10
 
@@ -44,12 +45,13 @@ class MorningCircle(discord.Client):
         while not client.is_closed():
             try:
                 # Target time is today but at a specific hour
-                target_time = datetime.now().replace(hour=self.scheduled_hour, minute=0, second=0, microsecond=0)
+                target_time = datetime.now().replace(hour=self.scheduled_hour + UTC_OFFSET, minute=0, second=0, microsecond=0)
                 # Adjust the current time from UTC to EST
-                current_time = datetime.now() - timedelta(hours=4)
+                current_time = datetime.now()
                 # If the target hour is before now, move target to tomorrow
                 if current_time.hour >= self.scheduled_hour:
                     target_time = target_time + timedelta(days=1)
+                
                 # Calculate n seconds until the target time
                 nseconds = (target_time - datetime.now()).total_seconds()
                 print(f'Seconds to next question: {nseconds}')
@@ -69,13 +71,14 @@ class MorningCircle(discord.Client):
     async def send_question(self):
         # Select a random question and remove it from the question bank
         if (len(self.question_bank) == 0):
-            question = "Error: I'm out of questions!"
+            response = "Error: I'm out of questions!"
         else:
             question = random.choice(self.question_bank)
             self.question_bank.remove(question)
             self.write_out_question_file()
+            response = "Today's morning circle question is: " + question
 
-        await self.get_channel(self.question_channel).send(question)
+        await self.get_channel(self.question_channel).send(response)
 
     async def handle_command(self, message):
         command = message.content[1:].strip()
