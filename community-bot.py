@@ -45,8 +45,10 @@ class MorningCircle(discord.Client):
             try:
                 # Target time is today but at a specific hour
                 target_time = datetime.now().replace(hour=self.scheduled_hour, minute=0, second=0, microsecond=0)
+                # Adjust the current time from UTC to EST
+                current_time = datetime.now() - timedelta(hours=4)
                 # If the target hour is before now, move target to tomorrow
-                if datetime.now().hour >= self.scheduled_hour:
+                if current_time.hour >= self.scheduled_hour:
                     target_time = target_time + timedelta(days=1)
                 # Calculate n seconds until the target time
                 nseconds = (target_time - datetime.now()).total_seconds()
