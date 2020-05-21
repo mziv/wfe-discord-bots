@@ -12,8 +12,10 @@ from datetime import datetime
 from datetime import timedelta
 
 UTC_OFFSET = 4
-MORNING_CIRCLE_CHANNEL = 712816699765948427
-DEFAULT_HOUR = 10
+MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
+ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud
+COMMAND_CHANNELS = [689806899268550708] # no-kids-garbage-time
+DEFAULT_HOUR = 10 # send message at 10am
 
 ADD_COMMAND     = 'add'
 HELP_COMMAND    = 'help'
@@ -51,7 +53,7 @@ class MorningCircle(discord.Client):
                 # If the target hour is before now, move target to tomorrow
                 if current_time.hour >= self.scheduled_hour:
                     target_time = target_time + timedelta(days=1)
-                
+
                 # Calculate n seconds until the target time
                 nseconds = (target_time - datetime.now()).total_seconds()
                 print(f'Seconds to next question: {nseconds}')
@@ -70,27 +72,30 @@ class MorningCircle(discord.Client):
 
     async def send_question(self):
         # Select a random question and remove it from the question bank
-        if (len(self.question_bank) == 0):
-            response = "Error: I'm out of questions!"
+        if len(self.question_bank) == 0:
+            response = "Sorry team, I'm out of questions!"
         else:
             question = random.choice(self.question_bank)
             self.question_bank.remove(question)
             self.write_out_question_file()
-            response = "Today's morning circle question is: " + question
+            response = "Today's morning circle question is: \n" + question
 
         await self.get_channel(self.question_channel).send(response)
 
     async def handle_command(self, message):
         command = message.content[1:].strip()
+        print(f'Received command: {command}')
+
+        # Default response
         response = 'Sorry, I don\'t recognize that command. Try `# help` for a list of commands I do know.'
 
         if command.startswith(HELP_COMMAND):
             response  = 'Here are all the things I know how to do!\n'
-            response += '`# help` - list all the commands I know'
-            response += '`# add <question>` - add a question to my question bank\n'
+            response += '`# help` - list all the commands I know\n'
+            response += '`# add question` - add a question to my question bank\n'
             response += '`# list` - list all of the questions I have stored\n'
-            response += '`# remove <question>` - remove a question from my question bank\n'
-            response += '`# channel` - set the channel I should be sending questions to in the morning\n'
+            response += '`# remove question` - remove a question from my question bank\n'
+            #response += '`# channel` - set the channel I should be sending questions to in the morning\n'
         elif command.startswith(ADD_COMMAND):
             question = command[len(ADD_COMMAND):].strip()
             self.question_bank.append(question)
@@ -105,14 +110,18 @@ class MorningCircle(discord.Client):
                 response += ' - ' + q + '\n'
 
         elif command.startswith(REMOVE_COMMAND):
-            question = command[len(REMOVE_COMMAND):].strip()
-            if question in self.question_bank:
-                self.question_bank.remove(question)
-                self.write_out_question_file()
-                response = 'Successfully removed.'
+            if message.author.id not in ADMIN_LIST:
+                response = 'Sorry, you\'re not authorized to take that action.'
             else:
-                response = 'Sorry, I couldn\'t find that question.'
+                question = command[len(REMOVE_COMMAND):].strip()
+                if question in self.question_bank:
+                    self.question_bank.remove(question)
+                    self.write_out_question_file()
+                    response = 'Successfully removed.'
+                else:
+                    response = 'Sorry, I couldn\'t find that question.'
         elif command.startswith(CHANNEL_COMMAND):
+            return # disabled for now!
             channel = command[len(CHANNEL_COMMAND):].strip()
             response = 'Sorry, I couldn\'t find the specified channel.'
             for c in self.guilds[0].channels:
@@ -123,13 +132,14 @@ class MorningCircle(discord.Client):
         await message.channel.send(response)
 
     async def on_message(self, message):
-        # We don't want the bot to reply to itself or monitor the feedback channel
+        # We don't want the bot to reply to itself
         if message.author.id == self.user.id:
             return
 
-        # Passively listen for messages directed at the bot
-        if message.content.startswith('#'):
-            await self.handle_command(message)
+        if message.channel.id in COMMAND_CHANNELS or message.author.id in ADMIN_LIST:
+            # Passively listen for messages directed at the bot
+            if message.content.startswith('#'):
+                await self.handle_command(message)
 
     async def on_ready(self):
         print(f'{self.user} has connected to Discord!')
