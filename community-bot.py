@@ -92,12 +92,14 @@ class MorningCircle(discord.Client):
         if command.startswith(HELP_COMMAND):
             response  = 'Here are all the things I know how to do!\n'
             response += '`# help` - list all the commands I know\n'
-            response += '`# add question` - add a question to my question bank\n'
+            response += '`# add` - add a question to my question bank (put the question after the word add)\n'
             response += '`# list` - list all of the questions I have stored\n'
-            response += '`# remove question` - remove a question from my question bank\n'
+            response += '`# remove` - remove a question from my question bank (put the question after the word remove)\n'
             #response += '`# channel` - set the channel I should be sending questions to in the morning\n'
         elif command.startswith(ADD_COMMAND):
             question = command[len(ADD_COMMAND):].strip()
+            if len(question) == 0:
+                response = "Please add a question after that command."
             self.question_bank.append(question)
             self.write_out_question_file()
 
