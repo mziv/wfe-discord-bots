@@ -7,9 +7,15 @@ import os
 import asyncio
 import discord
 import random
-from config import TOKEN
+import json
+# from config import TOKEN
 from datetime import datetime
 from datetime import timedelta
+
+# Load token from config file
+with open('../config.py', 'r') as config:
+    tokens = json.load(config)
+    TOKEN  = tokens['CIRCLE_TOKEN'] 
 
 UTC_OFFSET = 4
 MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
