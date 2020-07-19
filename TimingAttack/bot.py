@@ -8,7 +8,8 @@ with open('../config.py', 'r') as config:
     TOKEN  = tokens['TIMING_TOKEN'] 
 
 # Necessary state
-password = 'xxxdef'
+PREFIX   = 'ccc'
+password = 'cccdef'
 attempts = 0
 
 bot = commands.Bot(command_prefix='!')
@@ -28,7 +29,7 @@ async def on_ready():
 async def set_pwd(ctx, message: str):
     global password
     global attempts
-    password = message.lower()
+    password = 'ccc' + message.lower()
     attempts = 0
     await ctx.send("Set password to: `" + password + "`")
 
@@ -36,6 +37,10 @@ async def set_pwd(ctx, message: str):
 async def take_turn(ctx, guess: str):
     global attempts
     attempts += 1
+
+    if len(guess) > len(password):
+        await ctx.send(code_format("- ERROR: Password entry exceeded max length."))
+        return
 
     guess = guess.lower()
     time_spent = random.uniform(0, 0.1)
@@ -52,7 +57,7 @@ async def take_turn(ctx, guess: str):
 
     response = "- ERROR: Incorrect Authentication.\nProcessing time: " + str(time_spent) + " cycs"
     if attempts > 3:
-        response += "\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix XXX and are in the range a-g."
+        response += "\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"ACE\" and are made up of characters in the range a-g."
     await ctx.send(code_format(response))
 
 @bot.event
