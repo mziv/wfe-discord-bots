@@ -24,8 +24,7 @@ async def on_ready():
     for guild in bot.guilds:
        print(' -', guild.name)
 
-@bot.command(name='set', help='Sets the secret password.')
-@commands.has_any_role("Staff","Builder") 
+@bot.command(name='set', help='Sets the secret password.', hidden=True)
 async def set_pwd(ctx, message: str):
     global password
     global attempts
@@ -56,8 +55,10 @@ async def take_turn(ctx, guess: str):
         return
 
     response = "- ERROR: Incorrect Authentication.\nProcessing time: " + str(time_spent) + " cycs"
-    if attempts > 3:
-        response += "\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"ACE\" and are made up of characters in the range a-g."
+    if attempts > 3 and attempts <= 6:
+        response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
+    elif attempts > 6:
+        response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
     await ctx.send(code_format(response))
 
 @bot.event
