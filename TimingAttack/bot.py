@@ -8,8 +8,8 @@ with open('../config.py', 'r') as config:
     TOKEN  = tokens['TIMING_TOKEN'] 
 
 # Necessary state
-PREFIX   = 'ccc'
-password = 'cccdef'
+PREFIX   = 'ace'
+password = 'acedef'
 attempts = 0
 
 bot = commands.Bot(command_prefix='!')
@@ -29,7 +29,7 @@ async def on_ready():
 async def set_pwd(ctx, message: str):
     global password
     global attempts
-    password = 'ccc' + message.lower()
+    password = PREFIX + message.lower()
     attempts = 0
     await ctx.send("Set password to: `" + password + "`")
 
