@@ -2,6 +2,7 @@
 import json
 import random
 from discord.ext import commands
+import discord
 
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
@@ -59,6 +60,7 @@ async def on_ready():
     print('This bot is in the following guilds:')
     for guild in bot.guilds:
        print(' -', guild.name)
+    await bot.change_presence(game=discord.Game(name='Storing galactic files | !help'))
 
 @bot.command(name='start', help='Starts a game.')
 async def start(ctx):

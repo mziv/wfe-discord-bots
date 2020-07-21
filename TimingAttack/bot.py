@@ -4,6 +4,7 @@
 import json
 import random
 from discord.ext import commands
+import discord
 
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
@@ -25,6 +26,7 @@ async def on_ready():
     print('This bot is in the following guilds:')
     for guild in bot.guilds:
        print(' -', guild.name)
+    await bot.change_presence(game=discord.Game(name='All things radar | +help'))
 
 @bot.command(name='set', help='Sets the secret password.', hidden=True)
 async def set_pwd(ctx, message: str):
