@@ -42,7 +42,7 @@ async def set_pwd(ctx, message: str):
     attempts = 0
     await ctx.send("Set password to: `" + password + "`")
 
-@bot.command(name='login', help='Attempt a login.')
+@bot.command(name='try', help='Attempt a login.')
 async def take_turn(ctx, guess: str):
     global attempts
     attempts += 1
