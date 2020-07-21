@@ -1,4 +1,6 @@
 # bot.py
+# to look into: https://github.com/Rapptz/discord.py/blob/e2de93e2a65960c9c83e8a2fe53d18c4f9600196/discord/ext/commands/bot.py#L622
+
 import json
 import random
 from discord.ext import commands
@@ -26,6 +28,14 @@ async def on_ready():
 
 @bot.command(name='set', help='Sets the secret password.', hidden=True)
 async def set_pwd(ctx, message: str):
+    # Verify authentication
+    allowed = False
+    for role in ctx.author.roles:
+        if role.name in ["Staff", "Builder"]:
+            allowed = True
+    if not allowed:
+        return 
+
     global password
     global attempts
     password = PREFIX + message.lower()
@@ -43,7 +53,7 @@ async def take_turn(ctx, guess: str):
 
     guess = guess.lower()
     time_spent = random.uniform(0, 0.1)
-    time_unit = 1
+    time_unit = 10
     for i in range(min(len(guess), len(password))):
         if guess[i] == password[i]:
             time_spent += time_unit
@@ -57,8 +67,16 @@ async def take_turn(ctx, guess: str):
     response = "- ERROR: Incorrect Authentication.\nProcessing time: " + str(time_spent) + " cycs"
     if attempts > 3 and attempts <= 6:
         response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
-    elif attempts > 6:
+    elif attempts > 6 and attempts <= 9:
         response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
+    elif attempts > 9 and attemts <= 12:
+        response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `!hint` command.'
+    await ctx.send(code_format(response))
+
+@bot.command(name='hint', help='Helpful tips about the authentication system.', hidden=True)
+async def hint(ctx):
+    response =  f'+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
+    response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
     await ctx.send(code_format(response))
 
 @bot.event
