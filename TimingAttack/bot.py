@@ -69,7 +69,7 @@ async def take_turn(ctx, guess: str):
         response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
     elif attempts > 6 and attempts <= 9:
         response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
-    elif attempts > 9 and attemts <= 12:
+    elif attempts > 9 and attempts <= 12:
         response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `!hint` command.'
     await ctx.send(code_format(response))
 
