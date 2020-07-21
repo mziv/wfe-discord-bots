@@ -14,7 +14,7 @@ PREFIX   = 'ace'
 password = 'acedef'
 attempts = 0
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='+')
 
 def code_format(s):
     return "```diff\n" + s + "```"
