@@ -63,6 +63,12 @@ class MMGame:
             self.lose()
         return (False, (n_perfect, n_half))
 
+    def guess_valid(self, guess):
+        for c in guess:
+            if not c in self.RANGES[self.level]:
+                return False
+        return True
+
     def win(self):
         self.level += 1
         self.active = False
@@ -77,7 +83,7 @@ class MMGame:
         blanks = ''.join(['x' for i in range(self.SEQ_LENS[self.level])])
         char_range = self.RANGES[self.level]
         char_range = char_range[0] + '-' + char_range[-1]
-        return f'You have [{self.turns_left}] turns to crack the password, ' + \
+        return f'You have [{self.turns_left}] attempts to crack the password, ' + \
                f'which will be made up of characters from [{char_range}]. ' + \
                f'Send `!guess {blanks}` to make your guess.'
 
@@ -136,6 +142,10 @@ class Backdoor(commands.Cog):
             await ctx.send(code_format(f'Your entry isn\'t the right length. Make sure it\'s [{len(game.sequence)}] characters long.'))
             return
 
+        if not game.guess_valid(guess):
+            await ctx.send(code_format(f'There are invalid characters in this guess. Remember that the valid range of characters is [{game.RANGES[game.level]}].'))
+            return
+
         level = game.level
         result = game.check(guess)
 
@@ -150,10 +160,10 @@ class Backdoor(commands.Cog):
 
         # If there are no more turns, we should let them know
         if game.turns_left == 0:
-            await ctx.send(code_format(f'The system detected you - you\'ll have to wait for it to reset before you can try again. Send `!begin` to try again at this level.'))
+            await ctx.send(code_format(f'- The system detected you - you\'ll have to wait for it to reset before you can try again.\n\nSend `!begin` to try again at this level.', 'diff'))
             return
 
-        await ctx.send(code_format(f'[{result[1][0]}] exacts, [{result[1][1]}] nears.\n\nYou have [{game.turns_left}] guesses left before the system detects you.'))
+        await ctx.send(code_format(f'[{result[1][0]}] exacts, [{result[1][1]}] nears.\n\nYou have [{game.turns_left}] attempts left before the system detects you.'))
 
 
     @commands.command(name='begin', help='Begin hacking current level.')
