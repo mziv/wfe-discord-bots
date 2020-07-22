@@ -8,17 +8,25 @@ with open('../config.py', 'r') as config:
     tokens = json.load(config)
     TOKEN  = tokens['MASTER_TOKEN'] 
 
-SEQ_LEN = 4
-N_TURNS = 10
+def code_format(s, type='ini'):
+    return "```" + type + "\n" + s + "```"
 
 class MMGame:
+    RANGES   = { 1: 'ab', 2: 'abcd', 3: 'abcdef' }
+    SEQ_LENS = { 1: 3, 2: 3, 3: 4 }
+    N_TURNS  = 10
+
     def __init__(self):
-        self.reset()
         self.active = False
+        self.level = 1
+
+    def full_reset(self):
+        self.active = False
+        self.level = 1
 
     def reset(self):
-        self.turns_left = N_TURNS
-        self.sequence = "".join(random.choice('abcdef') for _ in range(SEQ_LEN))
+        self.turns_left = self.N_TURNS
+        self.sequence = "".join(random.choice(self.RANGES[self.level]) for _ in range(self.SEQ_LENS[self.level]))
         self.active = True
 
     def check(self, guess):
@@ -31,8 +39,13 @@ class MMGame:
         for i in range(len(self.sequence)):
             if self.sequence[i] == guess[i]:
                 to_remove.append(i)
-
         n_perfect = len(to_remove)
+
+        # Return tuple of the form (won?, (# perfect, # half))
+        if n_perfect == len(self.sequence):
+            self.win()
+            return (True, (-1, -1))
+
         for i in to_remove[::-1]:
             correct = correct[:i] + correct[i+1:]
             guess = guess[:i] + guess[i+1:]
@@ -45,14 +58,32 @@ class MMGame:
                 i = correct.index(c)
                 correct = correct[:i] + correct[i+1:]
 
-        return (n_perfect, n_half)
+        # Return tuple of the form (won?, (# perfect, # half))
+        if self.turns_left == 0:
+            self.lose()
+        return (False, (n_perfect, n_half))
 
-    def end_game(self):
+    def win(self):
+        self.level += 1
         self.active = False
+
+    def lose(self):
+        self.active = False
+
+    def status(self):
+        if not self.active:
+            return "There is no active hacking session. Send `!begin` to start one."
+
+        blanks = ''.join(['x' for i in range(self.SEQ_LENS[self.level])])
+        char_range = self.RANGES[self.level]
+        char_range = char_range[0] + '-' + char_range[-1]
+        return f'You have [{self.turns_left}] turns to crack the password, ' + \
+               f'which will be made up of characters from [{char_range}]. ' + \
+               f'Send `!guess {blanks}` to make your guess.'
+
 
 # Necessary state
 bot = commands.Bot(command_prefix='!')
-active_game = MMGame()
 
 @bot.event
 async def on_ready():
@@ -60,35 +91,86 @@ async def on_ready():
     print('This bot is in the following guilds:')
     for guild in bot.guilds:
        print(' -', guild.name)
-    await bot.change_presence(game=discord.Game(name='Storing galactic files | !help'))
+    await bot.change_presence(activity=discord.Game(name='all things data storage | !help'))
 
-@bot.command(name='start', help='Starts a game.')
-async def start(ctx):
-    active_game.reset()
-    await ctx.send(f'Game begun. You have {N_TURNS} turns to crack the password, which will be made up of characters from a-f. Send `!guess xxxx` to make your guess.')
+class Backdoor(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.games = {
+            731599896486084732: MMGame(),
+            731599896486084733: MMGame(),
+            731599896486084734: MMGame(),
+            731599896486084735: MMGame(),
 
-@bot.command(name='guess', help='Make a guess in an active game.')
-async def guess(ctx, guess):
-    if active_game.turns_left <= 0:
-        await ctx.send(f'You have lost. The winning answer was {active_game.sequence}. Send `!start` to start a new game.')
-        return
+            # staff channel
+            734437033841524816: MMGame()
+        }
 
-    if not active_game.active:
-        await ctx.send(f'There is no active game. Send `!start` to start a new game.')
-        return
+    async def get_active_game(self, ctx):
+        if not ctx.channel.id in self.games:
+            await ctx.send(code_format(f'You can\'t access that service from here.'))
+            return
+        game = self.games[ctx.channel.id]
+        return game
 
-    if len(guess) != len(active_game.sequence):
-        await ctx.send(f'Your guess isn\'t the right length. Make sure it\'s {SEQ_LEN} characters long.')
-        return
+    @commands.command(name='status', help='Reports info about the current hacking session.')
+    async def status(self, ctx):
+        game = await self.get_active_game(ctx)
+        if not game:
+            return
+        await ctx.send(code_format(game.status()))
 
-    result = active_game.check(guess)
-    if result[0] == SEQ_LEN:
-        active_game.end_game()
-        await ctx.send(f'Congratulations, you\'ve won!')
-        return
 
-    await ctx.send(f'{result[0]} exacts, {result[1]} nears (guesses remaining: {active_game.turns_left})')
+    @commands.command(name='guess', help='Make a guess in an active game.')
+    async def guess(self, ctx, guess):
+        game = await self.get_active_game(ctx)
+        if not game:
+            return
 
+        # Error handling
+        if not game.active:
+            await ctx.send(code_format('There is no active hacking session. Send `!begin` to start one.'))
+            return
+
+        if len(guess) != len(game.sequence):
+            await ctx.send(code_format(f'Your entry isn\'t the right length. Make sure it\'s [{len(game.sequence)}] characters long.'))
+            return
+
+        level = game.level
+        result = game.check(guess)
+
+        # result[0] is True if we won
+        if result[0]:
+            max_level = max(game.SEQ_LENS.keys())
+            if level == max_level:
+                await ctx.send(code_format(f'[LEVEL {level} BREACHED].\n\nThere are [{max_level - level}] levels remaining; full system access acquired.\n\n<insert relevant google drive link here>'))
+            else:
+                await ctx.send(code_format(f'[LEVEL {level}] BREACHED.\n\nThere are [{max_level - level}] levels remaining. Send `!begin` to begin the next level.'))
+            return
+
+        # If there are no more turns, we should let them know
+        if game.turns_left == 0:
+            await ctx.send(code_format(f'The system detected you - you\'ll have to wait for it to reset before you can try again. Send `!begin` to try again at this level.'))
+            return
+
+        await ctx.send(code_format(f'[{result[1][0]}] exacts, [{result[1][1]}] nears.\n\nYou have [{game.turns_left}] guesses left before the system detects you.'))
+
+
+    @commands.command(name='begin', help='Begin hacking current level.')
+    async def begin(self, ctx):
+        game = await self.get_active_game(ctx)
+        if not game:
+            return
+        game.reset()
+        await ctx.send(code_format(f'[LEVEL {game.level}] HACKING INITIATED.\n\n' + game.status()))
+
+    @commands.command(name='reset', help='Reset this channel\'s progress.', hidden=True)
+    async def reset(self, ctx):
+        game = await self.get_active_game(ctx)
+        if not game:
+            return
+        game.full_reset()
+        await ctx.send(code_format(f'Channel state fully reset.'))
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -97,4 +179,6 @@ async def on_command_error(ctx, error):
     else: 
         print(error)
 
+
+bot.add_cog(Backdoor(bot))
 bot.run(TOKEN)
