@@ -154,6 +154,7 @@ class MorningCircle(discord.Client):
         print('This bot is in the following guilds:')
         for guild in self.guilds:
            print(' -', guild.name)
+        await client.change_presence(activity=discord.Game(name='circles and questions | #help'))
 
 client = MorningCircle("questions.txt")
 client.loop.create_task(client.question_background_task())
