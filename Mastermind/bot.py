@@ -187,7 +187,7 @@ class Backdoor(commands.Cog):
         game.reset()
         await ctx.send(code_format(f'[LEVEL {game.level}] HACKING INITIATED.\n\n' + game.status()))
 
-    @commands.command(name='restart', help='Reset your hacking progress.', hidden=True)
+    @commands.command(name='restart', help='Reset your hacking progress.')
     async def restart(self, ctx):
         game = await self.get_active_game(ctx)
         if not game:
