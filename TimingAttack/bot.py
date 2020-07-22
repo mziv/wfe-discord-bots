@@ -1,24 +1,32 @@
 # bot.py
-# to look into: https://github.com/Rapptz/discord.py/blob/e2de93e2a65960c9c83e8a2fe53d18c4f9600196/discord/ext/commands/bot.py#L622
 
 import json
 import random
-from discord.ext import commands
 import discord
+from discord.ext import commands
+from enum import Enum
 
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
     TOKEN  = tokens['TIMING_TOKEN'] 
 
-# Necessary state
-PREFIX   = 'ace'
-password = 'acedef'
-attempts = 0
+# Constants
+PREFIX = 'ace'
+NONE  = 'none'
+BETA  = 'beta'
+ALPHA = 'alpha'
 
+def next(al):
+    if al == NONE:
+        return BETA
+    elif al == BETA:
+        return ALPHA
+
+def code_format(s, type='diff'):
+    return "```" + type + "\n" + s + "```"
+
+# Bot definitions
 bot = commands.Bot(command_prefix='+')
-
-def code_format(s):
-    return "```diff\n" + s + "```"
 
 @bot.event
 async def on_ready():
@@ -26,60 +34,111 @@ async def on_ready():
     print('This bot is in the following guilds:')
     for guild in bot.guilds:
        print(' -', guild.name)
-    await bot.change_presence(game=discord.Game(name='All things radar | +help'))
+    await bot.change_presence(activity=discord.Game(name='all things radar | +help'))
 
-@bot.command(name='set', help='Sets the secret password.', hidden=True)
-async def set_pwd(ctx, message: str):
-    # Verify authentication
-    allowed = False
-    for role in ctx.author.roles:
-        if role.name in ["Staff", "Builder"]:
-            allowed = True
-    if not allowed:
-        return 
 
-    global password
-    global attempts
-    password = PREFIX + message.lower()
-    attempts = 0
-    await ctx.send("Set password to: `" + password + "`")
+class Login(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.passwords = {ALPHA: 'acea', BETA: 'aceb'} # default
+        self.attempts = 0
 
-@bot.command(name='try', help='Attempt a login.')
-async def take_turn(ctx, guess: str):
-    global attempts
-    attempts += 1
+    @commands.command(name='set', help='Sets the password for level A or B', hidden=True)
+    @commands.has_any_role('Staff', 'Builder')
+    async def set_pwd(self, ctx, level, message: str):
+        if level != ALPHA and level != BETA: 
+            await ctx.send("Make sure to specify which level you want to set the password for (alpha or beta).")
+            return
+        self.passwords[level] = PREFIX + message.lower()
+        self.attempts = 0
+        await ctx.send(f'Set {level} password to: `{self.passwords[level]}`')
 
-    if len(guess) > len(password):
-        await ctx.send(code_format("- ERROR: Password entry exceeded max length."))
-        return
+    def get_access_level(self, ctx):
+        for role in ctx.author.roles:
+            if role.name == "Access Level Alpha":
+                return ALPHA
+            if role.name == "Access Level Beta":
+                return BETA
+        return NONE
 
-    guess = guess.lower()
-    time_spent = random.uniform(0, 0.1)
-    time_unit = 10
-    for i in range(min(len(guess), len(password))):
-        if guess[i] == password[i]:
-            time_spent += time_unit
-        else:
-            break
+    async def upgrade_access(self, ctx):
+        al = self.get_access_level(ctx)
+        beta  = discord.utils.get(ctx.channel.guild.roles, name='Access Level Beta')
+        alpha = discord.utils.get(ctx.channel.guild.roles, name='Access Level Alpha')
 
-    if guess == password:
-        await ctx.send(code_format("Correct Authentication."))
-        return
+        if al == NONE:
+            await ctx.author.add_roles(beta)
+            await ctx.send(code_format(f'Correct Authentication. Elevated {ctx.author.nick}\'s access levels. Type +help to see new abilities.\n\nThere is [1] higher access level available.', 'ini'))
+        elif al == BETA:
+            await ctx.author.remove_roles(beta)
+            await ctx.author.add_roles(alpha)
+            await ctx.send(code_format(f'Correct Authentication. Elevated {ctx.author.nick}\'s access levels. Type +help to see new abilities.\n\nThere are [0] higher acces levels available.', 'ini'))
 
-    response = "- ERROR: Incorrect Authentication.\nProcessing time: " + str(time_spent) + " cycs"
-    if attempts > 3 and attempts <= 6:
-        response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
-    elif attempts > 6 and attempts <= 9:
+    @commands.command(name='try', help='Attempt a login.')
+    async def take_turn(self, ctx, guess: str):
+        al = next(self.get_access_level(ctx))
+        if al == None:
+            await ctx.send(code_format("+ User has achieved the highest available access level."))
+            return
+
+        self.attempts += 1
+        pwd = self.passwords[al]
+
+        if len(guess) > len(pwd):
+            await ctx.send(code_format("- ERROR: Password entry exceeded max length."))
+            return
+
+        guess = guess.lower()
+        time_spent = random.uniform(0, 0.1)
+        time_unit = 10
+        for i in range(min(len(guess), len(pwd))):
+            if guess[i] == pwd[i]:
+                time_spent += time_unit
+            else:
+                break
+
+        if guess == pwd:
+            await self.upgrade_access(ctx)
+            return
+
+        response = "- ERROR: Incorrect Authentication for .\nProcessing time: " + str(time_spent) + " cycs"
+        if self.attempts > 3 and self.attempts <= 6:
+            response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
+        elif self.attempts > 6 and self.attempts <= 9:
+            response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
+        elif self.attempts > 9 and self.attempts <= 12:
+            response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `!hint` command.'
+        await ctx.send(code_format(response))
+
+    @commands.command(name='hint', help='Helpful tips about the authentication system.', hidden=True)
+    async def hint(self, ctx):
+        response =  f'+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
         response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
-    elif attempts > 9 and attempts <= 12:
-        response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `!hint` command.'
-    await ctx.send(code_format(response))
+        await ctx.send(code_format(response))
 
-@bot.command(name='hint', help='Helpful tips about the authentication system.', hidden=True)
-async def hint(ctx):
-    response =  f'+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
-    response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
-    await ctx.send(code_format(response))
+
+class Radar(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.info = []
+
+    @commands.command(name='add', help='Add info to the radar.')
+    @commands.has_role('Access Level Alpha')
+    async def addinfo(self, ctx, info):
+        self.info.append("+ " + info)
+        await ctx.send(code_format(f'Added info to radar systems: {info}'))
+
+    @commands.command(name='wipe', help='Wipe everything stored in the radar system.')
+    @commands.has_role('Access Level Alpha')
+    async def wipe(self, ctx):
+        self.info = []
+        await ctx.send(code_format('Radar systems wiped.'))
+
+    @commands.command(name='status', help='Report current radar information.')
+    @commands.has_any_role('Access Level Beta', 'Access Level Alpha')
+    async def status(self, ctx):
+        await ctx.send(code_format('Current radar info:\n\n' + '\n'.join(self.info)))
+
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -88,5 +147,6 @@ async def on_command_error(ctx, error):
     else: 
         print(error)
 
-
+bot.add_cog(Login(bot))
+bot.add_cog(Radar(bot))
 bot.run(TOKEN)
