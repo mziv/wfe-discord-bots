@@ -13,7 +13,7 @@ def code_format(s, type='ini'):
 
 class MMGame:
     RANGES   = { 1: 'ab', 2: 'abcd', 3: 'abcdef' }
-    SEQ_LENS = { 1: 3 } #, 2: 3, 3: 4 }
+    SEQ_LENS = { 1: 3, 2: 3, 3: 4 }
     N_TURNS  = 10
 
     def __init__(self):
@@ -137,7 +137,7 @@ class Backdoor(commands.Cog):
             response += f'\n\nSystem fully breached! New access levels achieved. Send `!help` for more information.'
         await ctx.send(code_format(response))
 
-    @commands.command(name='guess', help='Make a guess in your game.')
+    @commands.command(name='guess', help='Make a guess in your current hacking session.')
     async def guess(self, ctx, guess):
         game = await self.get_active_game(ctx)
         if not game:
@@ -187,13 +187,13 @@ class Backdoor(commands.Cog):
         game.reset()
         await ctx.send(code_format(f'[LEVEL {game.level}] HACKING INITIATED.\n\n' + game.status()))
 
-    @commands.command(name='reset', help='Reset your hacking progress.', hidden=True)
-    async def reset(self, ctx):
+    @commands.command(name='restart', help='Reset your hacking progress.', hidden=True)
+    async def restart(self, ctx):
         game = await self.get_active_game(ctx)
         if not game:
             return
         game.full_reset()
-        await ctx.send(code_format(f'Channel state fully reset.'))
+        await ctx.send(code_format(f'Hacking state fully reset.'))
 
     @commands.command(name='storage', help='Full access to internal systems.')
     @commands.has_role('Code Master')
@@ -202,6 +202,12 @@ class Backdoor(commands.Cog):
             await ctx.send(code_format(f'- ERROR: System is not fully breached.', 'diff'))
             return
         await ctx.send(code_format('insert top secret gdrive link here'))
+
+    @commands.command(name='reset', help='Reset the number of breaches')
+    @commands.has_any_role('Staff', 'Builder')
+    async def reset(self, ctx):
+        self.breaches = 0
+        await ctx.send(code_format(f'Number of breaches reset to [{self.breaches}].'))
 
 
 @bot.event
