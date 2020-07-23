@@ -22,6 +22,7 @@ MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
 ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud
 COMMAND_CHANNELS = [689806899268550708] # no-kids-garbage-time
 DEFAULT_HOUR = 10 # send message at 10am
+CHAR_LIMIT = 2000
 
 ADD_COMMAND     = 'add'
 HELP_COMMAND    = 'help'
@@ -115,6 +116,9 @@ class MorningCircle(discord.Client):
         elif command.startswith(LIST_COMMAND):
             response  = 'Stored questions:\n'
             for q in self.question_bank:
+                if len(response) + len(q) > CHAR_LIMIT:
+                    await message.channel.send(response)
+                    response = ''
                 response += ' - ' + q + '\n'
 
         elif command.startswith(REMOVE_COMMAND):

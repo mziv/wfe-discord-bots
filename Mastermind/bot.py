@@ -108,34 +108,37 @@ class Backdoor(commands.Cog):
 
     async def get_active_game(self, ctx):
         if not ctx.author.id in self.games:
-            await ctx.send(code_format(f'Send `!begin` to start hacking.'))
+            await ctx.send(code_format(f'There is no active hacking session. Send `!begin` to start one.'))
             return
         game = self.games[ctx.author.id]
         return game
+
+    ### Status reports ###
 
     @commands.command(name='status', help='Reports info about your hacking session.')
     async def status(self, ctx):
         game = await self.get_active_game(ctx)
         if not game:
             return
-        await ctx.send(code_format(game.status()))
+        await ctx.send(code_format(f'HACKING AT [LEVEL {game.level}].\n\n' + game.status()))
 
-    @commands.command(name='breaches', help='Reports aggregate info about system integrity')
+    @commands.command(name='breaches', help='Reports aggregate info about system integrity.')
     async def breaches(self, ctx):
         response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
         response += f'; System integrity: [{(self.REQ_BREACHES - self.breaches) * 100 / self.REQ_BREACHES}%]'
         await ctx.send(code_format(response))
 
-    async def win(self, ctx):
-        self.breaches += 1
-        role = discord.utils.get(ctx.channel.guild.roles, name='Code Master')
-        await ctx.author.add_roles(role)
-        await ctx.send(code_format(f'You have breached the system. [Code Master] status acquired. If you wish to contribute another breach, simply send `!begin` again to restart from your current level.'))
-        response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
-        response += f'; System integrity: [{max(self.REQ_BREACHES - self.breaches, 0) * 100 / self.REQ_BREACHES}%]'
-        if self.breaches >= self.REQ_BREACHES:
-            response += f'\n\nSystem fully breached! New access levels achieved. Send `!help` for more information.'
-        await ctx.send(code_format(response))
+    ### Gameplay ###
+
+    @commands.command(name='begin', help='Begin hacking current level.')
+    async def begin(self, ctx):
+        if not ctx.author.id in self.games:
+            self.games[ctx.author.id] = MMGame()
+        game = await self.get_active_game(ctx)
+        if not game:
+            return
+        game.reset()
+        await ctx.send(code_format(f'[LEVEL {game.level}] HACKING INITIATED.\n\n' + game.status()))
 
     @commands.command(name='guess', help='Make a guess in your current hacking session.')
     async def guess(self, ctx, guess):
@@ -176,32 +179,54 @@ class Backdoor(commands.Cog):
 
         await ctx.send(code_format(f'[{result[1][0]}] exacts, [{result[1][1]}] nears.\n\n; You have [{game.turns_left}] attempts left before the system detects you.'))
 
+    @commands.command(name='win', help='for testing; just win the game', hidden=True)
+    async def do_win(self, ctx):
+        await self.win(ctx)
 
-    @commands.command(name='begin', help='Begin hacking current level.')
-    async def begin(self, ctx):
-        if not ctx.author.id in self.games:
-            self.games[ctx.author.id] = MMGame()
-        game = await self.get_active_game(ctx)
-        if not game:
+    async def award_role(self, guild, uid, role_name):
+        role = discord.utils.get(guild.roles, name=role_name)
+        found = False
+        for member in guild.members:
+            if member.id == uid:
+                await member.add_roles(role)
+                found = True
+        return found
+
+    async def win(self, ctx):
+        self.breaches += 1
+        if type(ctx.channel) == discord.channel.DMChannel:
+            for g in self.bot.guilds:
+                if g.name == 'Across the Universe':
+                    guild = g
+        else:
+            guild = ctx.channel.guild
+        await self.award_role(guild, ctx.author.id, 'Code Master')
+        await ctx.send(code_format(f'You have breached the system. [Code Master] status acquired. If you wish to contribute another breach, simply send `!begin` again to restart from your current level.'))
+        response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
+        response += f'; System integrity: [{max(self.REQ_BREACHES - self.breaches, 0) * 100 / self.REQ_BREACHES}%]'
+        if self.breaches >= self.REQ_BREACHES:
+            response += f'\n\nSystem fully breached! Integrity compromised. New access levels achieved.'
+        await ctx.send(code_format(response))
+    
+    ### Reward ###
+
+    @commands.command(name='data', help='Full access to internal systems.')
+    @commands.has_any_role('Code Master')
+    async def data(self, ctx):
+        if self.breaches < self.REQ_BREACHES:
+            await ctx.send(code_format(f'- ERROR: System is not fully breached.', 'diff'))
             return
-        game.reset()
-        await ctx.send(code_format(f'[LEVEL {game.level}] HACKING INITIATED.\n\n' + game.status()))
+        await ctx.send(code_format('insert top secret gdrive link here'))
 
-    @commands.command(name='restart', help='Reset your hacking progress.')
+    ### State-changing options ###
+
+    @commands.command(name='restart', help='Reset your hacking progress.', hidden=True)
     async def restart(self, ctx):
         game = await self.get_active_game(ctx)
         if not game:
             return
         game.full_reset()
         await ctx.send(code_format(f'Hacking state fully reset.'))
-
-    @commands.command(name='storage', help='Full access to internal systems.')
-    @commands.has_role('Code Master')
-    async def storage(self, ctx):
-        if self.breaches < self.REQ_BREACHES:
-            await ctx.send(code_format(f'- ERROR: System is not fully breached.', 'diff'))
-            return
-        await ctx.send(code_format('insert top secret gdrive link here'))
 
     @commands.command(name='reset', help='Reset the number of breaches')
     @commands.has_any_role('Staff', 'Builder')
@@ -214,8 +239,15 @@ class Backdoor(commands.Cog):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.MissingRequiredArgument):
         await ctx.send('This command requires an argument.')
+    elif isinstance(error, commands.errors.NoPrivateMessage):
+        await ctx.send(code_format('This command cannot be used in private messages. Head back to the server and try it there.'))
+    elif isinstance(error, commands.errors.MissingAnyRole):
+        missing = str(error)[str(error).index(':') + 3:-1]
+        await ctx.send(code_format(f'You are not authorized to perform this command. [{missing}] status required.'))
     else: 
+        print(type(error))
         print(error)
+
 
 
 bot.add_cog(Backdoor(bot))
