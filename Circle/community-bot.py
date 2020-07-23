@@ -117,6 +117,9 @@ class MorningCircle(discord.Client):
             response  = 'Stored questions:\n'
             for q in self.question_bank:
                 if len(response) + len(q) > CHAR_LIMIT:
+                    await message.channel.send('There are too many questions you absolute lunatics.')
+                    time.sleep(2)
+                    await message.channel.send('...jk here u go')
                     await message.channel.send(response)
                     response = ''
                 response += ' - ' + q + '\n'
