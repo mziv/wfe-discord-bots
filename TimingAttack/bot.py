@@ -107,7 +107,7 @@ class Login(commands.Cog):
         elif self.attempts > 6 and self.attempts <= 9:
             response += f'\n\n+ NOTE: Password attempts are processed in order from front to back.'
         elif self.attempts > 9 and self.attempts <= 12:
-            response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `!hint` command.'
+            response += f'\n\n+ NOTE: Authentication system reminders can be accessed using the `+hint` command.'
         await ctx.send(code_format(response))
 
     @commands.command(name='hint', help='Helpful tips about the authentication system.', hidden=True)
