@@ -40,7 +40,7 @@ async def on_ready():
 class Login(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.passwords = {ALPHA: 'acea', BETA: 'aceb'} # default
+        self.passwords = {ALPHA: 'acefaced', BETA: 'acebad'} # default
         self.attempts = 0
 
     @commands.command(name='set', help='Sets the password for level A or B', hidden=True)
