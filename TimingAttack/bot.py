@@ -12,15 +12,16 @@ with open('../config.py', 'r') as config:
 
 # Constants
 PREFIX = 'ace'
-NONE  = 'none'
-BETA  = 'beta'
-ALPHA = 'alpha'
+NONE  = 'None'
+BETA  = 'Beta'
+ALPHA = 'Alpha'
 
 def next(al):
     if al == NONE:
         return BETA
     elif al == BETA:
         return ALPHA
+    return None
 
 def code_format(s, type='diff'):
     return "```" + type + "\n" + s + "```"
@@ -76,6 +77,9 @@ class Login(commands.Cog):
 
     @commands.command(name='try', help='Attempt a login.')
     async def take_turn(self, ctx, guess: str):
+        if type(ctx.channel) == discord.channel.DMChannel:
+            await ctx.send(code_format("This bot does not support DMs. Please send all of your commands in the server."))
+
         al = next(self.get_access_level(ctx))
         if al == None:
             await ctx.send(code_format("+ User has achieved the highest available access level."))
@@ -101,7 +105,7 @@ class Login(commands.Cog):
             await self.upgrade_access(ctx)
             return
 
-        response = "- ERROR: Incorrect Authentication for .\nProcessing time: " + str(time_spent) + " cycs"
+        response = f'- ERROR: Incorrect Authentication for Access Level {al}.\nProcessing time: ' + str(time_spent) + " cycs"
         if self.attempts > 3 and self.attempts <= 6:
             response += f'\n\n+ NOTE: Excessive login attempts registered. Remember that all passwords begin with the mandatory prefix \"{PREFIX}\" and are made up of characters in the range a-f.'
         elif self.attempts > 6 and self.attempts <= 9:
@@ -122,7 +126,7 @@ class Radar(commands.Cog):
         self.bot = bot
         self.info = []
 
-    @commands.command(name='add', help='Add info to the radar.')
+    @commands.command(name='add', help='Add a line of info to the radar system. Surround multi-word entries with "".')
     @commands.has_role('Access Level Alpha')
     async def addinfo(self, ctx, info):
         self.info.append("+ " + info)
@@ -137,7 +141,7 @@ class Radar(commands.Cog):
     @commands.command(name='status', help='Report current radar information.')
     @commands.has_any_role('Access Level Beta', 'Access Level Alpha')
     async def status(self, ctx):
-        await ctx.send(code_format('Current radar info:\n\n' + '\n'.join(self.info)))
+        await ctx.send(code_format('Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n\n' + '\n'.join(self.info)))
 
 
 @bot.event

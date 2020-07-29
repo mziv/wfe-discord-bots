@@ -155,8 +155,11 @@ class Backdoor(commands.Cog):
             await ctx.send(code_format(f'Your entry isn\'t the right length. Make sure it\'s [{len(game.sequence)}] characters long.'))
             return
 
+        guess = guess.lower()
         if not game.guess_valid(guess):
-            await ctx.send(code_format(f'There are invalid characters in this guess. Remember that the valid range of characters is [{game.RANGES[game.level]}].'))
+            char_range = game.RANGES[game.level]
+            char_range = char_range[0] + '-' + char_range[-1]
+            await ctx.send(code_format(f'There are invalid characters in this guess. Remember that the valid range of characters is [{char_range}].'))
             return
 
         level = game.level
@@ -205,7 +208,7 @@ class Backdoor(commands.Cog):
         response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
         response += f'; System integrity: [{max(self.REQ_BREACHES - self.breaches, 0) * 100 / self.REQ_BREACHES}%]'
         if self.breaches >= self.REQ_BREACHES:
-            response += f'\n\nSystem fully breached! Integrity compromised. New access levels achieved.'
+            response += f'\n\nSystem fully breached! Integrity compromised. New access levels achieved - return to the server and send `!help` for more information.'
         await ctx.send(code_format(response))
     
     ### Reward ###
