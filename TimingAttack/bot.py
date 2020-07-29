@@ -153,6 +153,8 @@ class Radar(commands.Cog):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.MissingRequiredArgument):
         await ctx.send(code_format('This command requires an argument.'))
+    elif isinstance(error, commands.errors.NoPrivateMessage):
+        await ctx.send(code_format('This command cannot be used in private messages. Head back to the server and try it there.'))
     else: 
         print(error)
 
