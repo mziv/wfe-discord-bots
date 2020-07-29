@@ -3,6 +3,7 @@ import json
 import random
 from discord.ext import commands
 import discord
+import time
 
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
@@ -10,6 +11,21 @@ with open('../config.py', 'r') as config:
 
 def code_format(s, type='ini'):
     return "```" + type + "\n" + s + "```"
+
+ROLES = [
+    "Meteor Marauders",
+    "Neo Novaco",
+    "The Celestites",
+    "Starfleet Dawnbreaker",
+    "None"
+]
+
+DATA_MAP = {
+    "Meteor Marauders": "DATA FILE [SECRET 1]: <grdive link>",
+    "Neo Novaco": "DATA FILE [SECRET 2]: <gdrive link>",
+    "The Celestites": "DATA FILE [SECRET 3]: <gdrive link>",
+    "Starfleet Dawnbreaker": "DATA FILE [SECRET 4]: <gdrive link>"
+}
 
 class MMGame:
     RANGES   = { 1: 'ab', 2: 'abcd', 3: 'abcdef' }
@@ -103,8 +119,12 @@ class Backdoor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.games = {}
+        self.breach_map = {}
+        for role in ROLES:
+            self.breach_map[role] = 0
         self.breaches = 0
         self.REQ_BREACHES = 3
+        self.guild = None
 
     async def get_active_game(self, ctx):
         if not ctx.author.id in self.games:
@@ -112,6 +132,21 @@ class Backdoor(commands.Cog):
             return
         game = self.games[ctx.author.id]
         return game
+
+    async def get_user_role(self, ctx):
+        # Populate it once we need it, I guess.
+        if not self.guild:
+            for guild in self.bot.guilds:
+                if guild.name == 'Across the Universe':
+                    self.guild = guild
+
+        # Now actually get the member.
+        member = self.guild.get_member(ctx.author.id)
+        if member != None:
+            for role in member.roles:
+                if role.name in self.breach_map:
+                    return role.name
+        return "None"
 
     ### Status reports ###
 
@@ -124,8 +159,10 @@ class Backdoor(commands.Cog):
 
     @commands.command(name='breaches', help='Reports aggregate info about system integrity.')
     async def breaches(self, ctx):
-        response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
-        response += f'; System integrity: [{(self.REQ_BREACHES - self.breaches) * 100 / self.REQ_BREACHES}%]'
+        role = await self.get_user_role(ctx)
+        breaches = self.breach_map[role]
+        response =  f'You are breaching for [{role}]. The system has been breached [{breaches}/{self.REQ_BREACHES}] times.\n\n'
+        response += f'; System integrity: [{(self.REQ_BREACHES - breaches) * 100 / self.REQ_BREACHES}%]'
         await ctx.send(code_format(response))
 
     ### Gameplay ###
@@ -189,25 +226,22 @@ class Backdoor(commands.Cog):
     async def award_role(self, guild, uid, role_name):
         role = discord.utils.get(guild.roles, name=role_name)
         found = False
-        for member in guild.members:
-            if member.id == uid:
-                await member.add_roles(role)
-                found = True
+        member = guild.get_member(uid)
+        if member != None:
+            await member.add_roles(role)
+            found = True
         return found
 
     async def win(self, ctx):
-        self.breaches += 1
-        if type(ctx.channel) == discord.channel.DMChannel:
-            for g in self.bot.guilds:
-                if g.name == 'Across the Universe':
-                    guild = g
-        else:
-            guild = ctx.channel.guild
-        await self.award_role(guild, ctx.author.id, 'Code Master')
+        role = await self.get_user_role(ctx)
+        self.breach_map[role] += 1
+        
+        breaches = self.breach_map[role]
+        await self.award_role(self.guild, ctx.author.id, 'Code Master')
         await ctx.send(code_format(f'You have breached the system. [Code Master] status acquired. If you wish to contribute another breach, simply send `!begin` again to restart from your current level.'))
-        response =  f'The system has been breached [{self.breaches}/{self.REQ_BREACHES}] times.\n\n'
-        response += f'; System integrity: [{max(self.REQ_BREACHES - self.breaches, 0) * 100 / self.REQ_BREACHES}%]'
-        if self.breaches >= self.REQ_BREACHES:
+        response =  f'The system has been breached [{breaches}/{self.REQ_BREACHES}] times.\n\n'
+        response += f'; System integrity: [{max(self.REQ_BREACHES - breaches, 0) * 100 / self.REQ_BREACHES}%]'
+        if breaches >= self.REQ_BREACHES:
             response += f'\n\nSystem fully breached! Integrity compromised. New access levels achieved - return to the server and send `!help` for more information.'
         await ctx.send(code_format(response))
     
@@ -216,10 +250,15 @@ class Backdoor(commands.Cog):
     @commands.command(name='data', help='Full access to internal systems.')
     @commands.has_any_role('Code Master')
     async def data(self, ctx):
-        if self.breaches < self.REQ_BREACHES:
+        role = await self.get_user_role(ctx)
+        breaches = self.breach_map[role]
+        if breaches < self.REQ_BREACHES:
             await ctx.send(code_format(f'- ERROR: System is not fully breached.', 'diff'))
             return
-        await ctx.send(code_format('insert top secret gdrive link here'))
+        if role in DATA_MAP:
+            await ctx.send(code_format(DATA_MAP[role]))
+        else:
+            await ctx.send(code_format('There is no data to be found.'))
 
     ### State-changing options ###
 
@@ -233,9 +272,13 @@ class Backdoor(commands.Cog):
 
     @commands.command(name='reset', help='Reset the number of breaches')
     @commands.has_any_role('Staff', 'Builder')
-    async def reset(self, ctx):
-        self.breaches = 0
-        await ctx.send(code_format(f'Number of breaches reset to [{self.breaches}].'))
+    async def reset(self, ctx, role):
+        if role in self.breach_map:
+            self.breach_map[role] = 0
+        else:
+            self.breach_map["None"] = 0
+            role = "None"
+        await ctx.send(code_format(f'Number of breaches for [{role}] reset to [0].'))
 
 
 @bot.event
