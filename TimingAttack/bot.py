@@ -84,6 +84,7 @@ class Login(commands.Cog):
     async def take_turn(self, ctx, guess: str):
         if type(ctx.channel) == discord.channel.DMChannel:
             await ctx.send(code_format("This bot does not support DMs. Please send all of your commands in the server."))
+            return
 
         al = next(self.get_access_level(ctx))
         if al == None:
