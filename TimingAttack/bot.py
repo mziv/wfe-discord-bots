@@ -44,6 +44,11 @@ class Login(commands.Cog):
         self.passwords = {ALPHA: 'acefaced', BETA: 'acebad'} # default
         self.attempts = 0
 
+    @commands.command(name='reset', help='Resets # of attempts.', hidden=True)
+    @commands.has_any_role('Staff', 'Builder')
+    async def reset(self, ctx):
+        self.attempts = 0
+
     @commands.command(name='set', help='Sets the password for level A or B', hidden=True)
     @commands.has_any_role('Staff', 'Builder')
     async def set_pwd(self, ctx, level, message: str):
