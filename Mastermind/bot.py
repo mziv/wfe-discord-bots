@@ -282,9 +282,12 @@ class Backdoor(commands.Cog):
 
 
     @commands.command(name="all", help='Secret, report everything', hidden=True)
+    @commands.has_any_role('Staff', 'Builder')
     async def all(self, ctx):
+        response = ''
         for r in self.breach_map:
-            print(f'{r}: {self.breach_map[r]}')
+            response += f'{r}: {self.breach_map[r]}\n'
+        await ctx.send(code_format(response))
 
 
 @bot.event
