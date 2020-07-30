@@ -282,7 +282,7 @@ class Backdoor(commands.Cog):
 
 
     @commands.command(name="all", help='Secret, report everything', hidden=True)
-    async def all(self, ctx, role):
+    async def all(self, ctx):
         for r in self.breach_map:
             print(f'{r}: {self.breach_map[r]}')
 
