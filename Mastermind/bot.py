@@ -220,6 +220,7 @@ class Backdoor(commands.Cog):
         await ctx.send(code_format(f'[{result[1][0]}] exacts, [{result[1][1]}] nears.\n\n; You have [{game.turns_left}] attempts left before the system detects you.'))
 
     @commands.command(name='win', help='for testing; just win the game', hidden=True)
+    @commands.has_any_role('Staff', 'Builder')
     async def do_win(self, ctx):
         await self.win(ctx)
 
