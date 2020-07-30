@@ -281,6 +281,12 @@ class Backdoor(commands.Cog):
         await ctx.send(code_format(f'Number of breaches for [{role}] reset to [0].'))
 
 
+    @commands.command(name="all", help='Secret, report everything', hidden=True)
+    async def all(self, ctx, role):
+        for r in self.breach_map:
+            print(f'{r}: {self.breach_map[r]}')
+
+
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.MissingRequiredArgument):
