@@ -152,7 +152,7 @@ class Radar(commands.Cog):
     @commands.command(name='status', help='Report current radar information.')
     @commands.has_any_role('Access Level Beta', 'Access Level Alpha')
     async def status(self, ctx):
-        await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n\n' + '\n'.join(self.info)))
+        await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n\n- ' + '\n- '.join(self.info)))
 
 
 @bot.event
