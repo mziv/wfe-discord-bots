@@ -131,10 +131,10 @@ class Radar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.info = [
-            'DAWNBREAKER STARFLEET detected on TERRA CALISTO',
-            'THE CELESTITES detected on AEGIS',
-            'METEOR MARAUDERS detected on ORCOTH',
-            'NEO NOVACO detected on NOVA VICTORIA'
+            '- DAWNBREAKER STARFLEET detected on TERRA CALISTO',
+            '- THE CELESTITES detected on AEGIS',
+            '- METEOR MARAUDERS detected on ORCOTH',
+            '- NEO NOVACO detected on NOVA VICTORIA'
         ]
 
     @commands.command(name='add', help='Add a line of info to the radar system. Surround multi-word entries with "".')
@@ -152,7 +152,7 @@ class Radar(commands.Cog):
     @commands.command(name='status', help='Report current radar information.')
     @commands.has_any_role('Access Level Beta', 'Access Level Alpha')
     async def status(self, ctx):
-        await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n\n- ' + '\n- '.join(self.info)))
+        await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n' + '\n'.join(self.info)))
 
 
 @bot.event
@@ -161,7 +161,11 @@ async def on_command_error(ctx, error):
         await ctx.send(code_format('This command requires an argument.'))
     elif isinstance(error, commands.errors.NoPrivateMessage):
         await ctx.send(code_format('This command cannot be used in private messages. Head back to the server and try it there.'))
+    elif isinstance(error, commands.errors.MissingAnyRole):
+        missing = str(error)[str(error).index(':') + 3:-1]
+        await ctx.send(code_format(f'You are not authorized to perform this command. [{missing}] status required.'))
     else: 
+        print(type(error))
         print(error)
 
 bot.add_cog(Login(bot))
