@@ -5,6 +5,7 @@ import random
 import discord
 from discord.ext import commands
 from enum import Enum
+import copy
 
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
