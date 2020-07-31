@@ -154,7 +154,13 @@ class Radar(commands.Cog):
     @commands.command(name='status', help='Report current radar information.')
     @commands.has_any_role('Access Level Beta', 'Access Level Alpha')
     async def status(self, ctx):
-        await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n' + '\n'.join(self.info)))
+        response = '+ Available Access Levels: Beta, Alpha\n\nBattalion Details: https://docs.google.com/document/d/1zaK8UTxrM2aPmw5kivvoKPckthh30nKU-1U5ACOjYXg/edit\n\nCurrent radar info:'
+        for info in self.info:
+            if len(response + info) > 2000:
+                await ctx.send(code_format(response))
+                response = ''
+            response += '\n' + info
+        await ctx.send(code_format(response))
 
     @commands.command(name='resetinfo', help='Reset radar info to defaults.', hidden=True)
     @commands.has_any_role('Staff', 'Builder')
