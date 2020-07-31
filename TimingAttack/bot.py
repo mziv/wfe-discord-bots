@@ -162,8 +162,8 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.NoPrivateMessage):
         await ctx.send(code_format('This command cannot be used in private messages. Head back to the server and try it there.'))
     elif isinstance(error, commands.errors.MissingAnyRole):
-        missing = str(error)[str(error).index(':') + 3:-1]
-        role_str = ''.join([c for c in missing if c != '\''])
+        missing = str(error)[str(error).index(':') + 3:-1].replace("'", "")
+        print(role_str)
         await ctx.send(code_format(f'You are not authorized to perform this command. [{missing}] status required.'))
     else: 
         print(type(error))
