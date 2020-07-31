@@ -16,6 +16,13 @@ NONE  = 'None'
 BETA  = 'Beta'
 ALPHA = 'Alpha'
 
+START_INFO = [
+        '- DAWNBREAKER STARFLEET detected on TERRA CALISTO',
+        '- THE CELESTITES detected on AEGIS',
+        '- METEOR MARAUDERS detected on ORCOTH',
+        '- NEO NOVACO detected on NOVA VICTORIA'
+]
+
 def next(al):
     if al == NONE:
         return BETA
@@ -130,12 +137,7 @@ class Login(commands.Cog):
 class Radar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.info = [
-            '- DAWNBREAKER STARFLEET detected on TERRA CALISTO',
-            '- THE CELESTITES detected on AEGIS',
-            '- METEOR MARAUDERS detected on ORCOTH',
-            '- NEO NOVACO detected on NOVA VICTORIA'
-        ]
+        self.info = START_INFO
 
     @commands.command(name='add', help='Add a line of info to the radar system. Surround multi-word entries with "".')
     @commands.has_role('Access Level Alpha')
@@ -154,6 +156,12 @@ class Radar(commands.Cog):
     async def status(self, ctx):
         await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n' + '\n'.join(self.info)))
 
+    @commands.command(name='reset', help='Reset radar info to defaults.', hidden=True)
+    @commands.has_any_role('Staff', 'Builder')
+    async def reset(self, ctx):
+        self.info = START_INFO
+        await ctx.send(code_format('Radar info reset.'))
+
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -163,7 +171,7 @@ async def on_command_error(ctx, error):
         await ctx.send(code_format('This command cannot be used in private messages. Head back to the server and try it there.'))
     elif isinstance(error, commands.errors.MissingAnyRole):
         missing = str(error)[str(error).index(':') + 3:-1].replace("'", "")
-        await ctx.send(code_format(f'You are not authorized to perform this command. [{missing}] status required.'))
+        await ctx.send(code_format(f'You are not authorized to perform this command. [{missing}] status required.', 'ini'))
     else: 
         print(type(error))
         print(error)
