@@ -156,9 +156,9 @@ class Radar(commands.Cog):
     async def status(self, ctx):
         await ctx.send(code_format('+ Available Access Levels: Beta, Alpha\n\nCurrent radar info:\n' + '\n'.join(self.info)))
 
-    @commands.command(name='reset', help='Reset radar info to defaults.', hidden=True)
+    @commands.command(name='resetinfo', help='Reset radar info to defaults.', hidden=True)
     @commands.has_any_role('Staff', 'Builder')
-    async def reset(self, ctx):
+    async def resetinfo(self, ctx):
         self.info = START_INFO
         await ctx.send(code_format('Radar info reset.'))
 
