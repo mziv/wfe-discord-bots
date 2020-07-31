@@ -41,7 +41,7 @@ async def on_ready():
 class Login(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.passwords = {ALPHA: 'acefaced', BETA: 'acebad'} # default
+        self.passwords = {ALPHA: 'acedefae', BETA: 'aceade'} # default
         self.attempts = 0
 
     @commands.command(name='reset', help='Resets # of attempts.', hidden=True)
@@ -130,12 +130,17 @@ class Login(commands.Cog):
 class Radar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.info = []
+        self.info = [
+            'DAWNBREAKER STARFLEET detected on TERRA CALISTO',
+            'THE CELESTITES detected on AEGIS',
+            'METEOR MARAUDERS detected on ORCOTH',
+            'NEO NOVACO detected on NOVA VICTORIA'
+        ]
 
     @commands.command(name='add', help='Add a line of info to the radar system. Surround multi-word entries with "".')
     @commands.has_role('Access Level Alpha')
     async def addinfo(self, ctx, info):
-        self.info.append("+ " + info)
+        self.info.append("- " + info)
         await ctx.send(code_format(f'Added info to radar systems: {info}'))
 
     @commands.command(name='wipe', help='Wipe everything stored in the radar system.')
