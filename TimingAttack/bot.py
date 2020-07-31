@@ -137,7 +137,7 @@ class Login(commands.Cog):
 class Radar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.info = START_INFO
+        self.info = START_INFO[:]
 
     @commands.command(name='add', help='Add a line of info to the radar system. Surround multi-word entries with "".')
     @commands.has_role('Access Level Alpha')
@@ -165,7 +165,7 @@ class Radar(commands.Cog):
     @commands.command(name='resetinfo', help='Reset radar info to defaults.', hidden=True)
     @commands.has_any_role('Staff', 'Builder')
     async def resetinfo(self, ctx):
-        self.info = START_INFO
+        self.info = START_INFO[:]
         await ctx.send(code_format('Radar info reset.'))
 
 
