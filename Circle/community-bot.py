@@ -86,6 +86,7 @@ class MorningCircle(discord.Client):
             question = random.choice(self.question_bank)
             self.question_bank.remove(question)
             self.write_out_question_file()
+            question = question.replace('\\n', '\n')
             response = "Today's morning circle question is: \n" + question
 
         await self.get_channel(self.question_channel).send(response)
@@ -104,11 +105,15 @@ class MorningCircle(discord.Client):
             response += '`# list` - list all of the questions I have stored\n'
             response += '`# remove` - remove a question from my question bank (put the question after the word remove)\n'
             #response += '`# channel` - set the channel I should be sending questions to in the morning\n'
+        
         elif command.startswith(ADD_COMMAND):
             question = command[len(ADD_COMMAND):].strip()
             if len(question) == 0:
                 response = "Please add a question after that command."
-            self.question_bank.append(question)
+                await message.channel.send(response)
+                return
+
+            self.question_bank.append(question.replace('\n', '\\n'))
             self.write_out_question_file()
 
             # Reply with confirmation
@@ -120,22 +125,24 @@ class MorningCircle(discord.Client):
                 if len(response) + len(q) > CHAR_LIMIT:
                     await message.channel.send('There are too many questions you absolute lunatics.')
                     time.sleep(2)
-                    await message.channel.send('...jk here u go')
-                    await message.channel.send(response)
-                    response = ''
+                    return
+                    # await message.channel.send('...jk here u go')
+                    # await message.channel.send(response)
+                    # response = ''
                 response += ' - ' + q + '\n'
 
         elif command.startswith(REMOVE_COMMAND):
             if message.author.id not in ADMIN_LIST:
                 response = 'Sorry, you\'re not authorized to take that action.'
             else:
-                question = command[len(REMOVE_COMMAND):].strip()
+                question = command[len(REMOVE_COMMAND):].strip().replace('\n', '\\n')
                 if question in self.question_bank:
                     self.question_bank.remove(question)
                     self.write_out_question_file()
                     response = 'Successfully removed.'
                 else:
                     response = 'Sorry, I couldn\'t find that question.'
+        
         elif command.startswith(CHANNEL_COMMAND):
             return # disabled for now!
             channel = command[len(CHANNEL_COMMAND):].strip()

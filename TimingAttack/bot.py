@@ -45,6 +45,13 @@ async def on_ready():
        print(' -', guild.name)
     await bot.change_presence(activity=discord.Game(name='all things radar | +help'))
 
+async def get_member(id):
+    members = bot.get_all_members()
+    for m in bot.get_all_members():
+        print(m.id)
+        if m.id == id:
+            return m
+    return None
 
 class Login(commands.Cog):
     def __init__(self, bot):
@@ -53,8 +60,10 @@ class Login(commands.Cog):
         self.attempts = 0
 
     @commands.command(name='reset', help='Resets # of attempts.', hidden=True)
-    @commands.has_any_role('Staff', 'Builder')
+    #@commands.has_any_role('Staff', 'Builder')
     async def reset(self, ctx):
+        m = await get_member(ctx.author.id)
+        print(m.nickname)
         self.attempts = 0
 
     @commands.command(name='set', help='Sets the password for level A or B', hidden=True)

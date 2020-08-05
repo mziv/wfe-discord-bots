@@ -43,8 +43,6 @@ what is a hamster? wrong answers only
 Who goes there?
 How would you convince a plant to move?
 When you die, you can have one thing (building, object, mathematic theorem) named after you. What do you choose to bear your namesake?
-Three
-Word
-Check-in
+Three\nWord\nCheck-in
 Can you summarize one of your favorite movies in a way that makes it sound like something you wouldn't want to watch?
 if you were to create a ✨new astrological sign✨, when would it reign the heavens, what would be its symbol, and what characteristics would a person born under that sign have?
