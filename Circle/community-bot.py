@@ -132,16 +132,13 @@ class MorningCircle(discord.Client):
                 response += ' - ' + q + '\n'
 
         elif command.startswith(REMOVE_COMMAND):
-            if message.author.id not in ADMIN_LIST:
-                response = 'Sorry, you\'re not authorized to take that action.'
+            question = command[len(REMOVE_COMMAND):].strip().replace('\n', '\\n')
+            if question in self.question_bank:
+                self.question_bank.remove(question)
+                self.write_out_question_file()
+                response = 'Successfully removed.'
             else:
-                question = command[len(REMOVE_COMMAND):].strip().replace('\n', '\\n')
-                if question in self.question_bank:
-                    self.question_bank.remove(question)
-                    self.write_out_question_file()
-                    response = 'Successfully removed.'
-                else:
-                    response = 'Sorry, I couldn\'t find that question.'
+                response = 'Sorry, I couldn\'t find that question.'
         
         elif command.startswith(CHANNEL_COMMAND):
             return # disabled for now!
