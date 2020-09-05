@@ -5,11 +5,11 @@
 
 import os
 import asyncio
+from discord.ext import commands
 import discord
 import random
 import json
 import time
-# from config import TOKEN
 from datetime import datetime
 from datetime import timedelta
 
@@ -20,22 +20,39 @@ with open('../config.py', 'r') as config:
 
 UTC_OFFSET = 4
 MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
-ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud
+ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud  
 COMMAND_CHANNELS = [689806899268550708] # no-kids-garbage-time
 DEFAULT_HOUR = 10 # send message at 10am
 CHAR_LIMIT = 2000
 
-ADD_COMMAND     = 'add'
-HELP_COMMAND    = 'help'
-LIST_COMMAND    = 'list'
-REMOVE_COMMAND  = 'remove'
-CHANNEL_COMMAND = 'channel'
+def check_permissions(ctx):
+    return ctx.channel.id in COMMAND_CHANNELS or ctx.author.id in ADMIN_LIST
 
-class MorningCircle(discord.Client):
-    def __init__(self, question_file):
-        # Call parent constructor
-        super().__init__()
+bot = commands.Bot(command_prefix='#', help_command=None)
 
+@bot.event
+async def on_ready():
+    print(f'{bot.user} has connected to Discord!')
+    print('This bot is in the following guilds:')
+    for guild in bot.guilds:
+       print(' -', guild.name)
+    await bot.change_presence(activity=discord.Game(name='circles and questions | #help'))
+
+@bot.command()
+async def help(ctx):
+    if not check_permissions(ctx):
+        return
+    response  = 'Here are all the things I know how to do!\n'
+    response += '`#help` - list all the commands I know\n'
+    response += '`#add` - add a question to my question bank (make sure to surround it with quotes)\n'
+    response += '`#list` - list all of the questions I have stored\n'
+    response += '`#remove` - remove a question from my question bank (make sure to surround it with quotes)\n'
+    await ctx.send(response)
+    
+
+class MorningCircle(commands.Cog):
+    def __init__(self, bot, question_file):
+        self.bot = bot
         self.question_file = question_file
         with open(question_file, 'r+') as qs:
             self.question_bank = [q.strip() for q in qs.readlines()]
@@ -50,9 +67,9 @@ class MorningCircle(discord.Client):
                 out.write(q + "\n")
 
     async def question_background_task(self):
-        await self.wait_until_ready()
+        await self.bot.wait_until_ready()
 
-        while not client.is_closed():
+        while not self.bot.is_closed():
             try:
                 # Target time is today but at a specific hour
                 target_time = datetime.now().replace(hour=self.scheduled_hour + UTC_OFFSET, minute=0, second=0, microsecond=0)
@@ -89,85 +106,50 @@ class MorningCircle(discord.Client):
             question = question.replace('\\n', '\n')
             response = "Today's morning circle question is: \n" + question
 
-        await self.get_channel(self.question_channel).send(response)
+        await self.bot.get_channel(self.question_channel).send(response)
 
-    async def handle_command(self, message):
-        command = message.content[1:].strip()
-        print(f'Received command: {command}')
+    # Commands
+    @commands.command(name='add', help='Add a question to my question bank. Surround multi-word entries with "".')
+    async def addinfo(self, ctx, question):
+        if not check_permissions(ctx):
+            return 
+        self.question_bank.append(question.replace('\n', '\\n'))
+        self.write_out_question_file()
 
-        # Default response
-        response = 'Sorry, I don\'t recognize that command. Try `# help` for a list of commands I do know.'
+        # Reply with confirmation
+        response = f'Added \"{question}\" to the bank of questions.'
+        await ctx.send(response)
 
-        if command.startswith(HELP_COMMAND):
-            response  = 'Here are all the things I know how to do!\n'
-            response += '`# help` - list all the commands I know\n'
-            response += '`# add` - add a question to my question bank (put the question after the word add)\n'
-            response += '`# list` - list all of the questions I have stored\n'
-            response += '`# remove` - remove a question from my question bank (put the question after the word remove)\n'
-            #response += '`# channel` - set the channel I should be sending questions to in the morning\n'
-        
-        elif command.startswith(ADD_COMMAND):
-            question = command[len(ADD_COMMAND):].strip()
-            if len(question) == 0:
-                response = "Please add a question after that command."
-                await message.channel.send(response)
+    @commands.command(name='list', help='List all of the questions in my question bank.')
+    async def list(self, ctx):
+        if not check_permissions(ctx):
+            return 
+        response  = 'Stored questions:\n'
+        for q in self.question_bank:
+            if len(response) + len(q) > CHAR_LIMIT:
+                await ctx.send('There are too many questions you absolute lunatics.')
+                time.sleep(2)
                 return
+                # await message.channel.send('...jk here u go')
+                # await message.channel.send(response)
+                # response = ''
+            response += ' - ' + q + '\n'
+        await ctx.send(response)
 
-            self.question_bank.append(question.replace('\n', '\\n'))
+    @commands.command(name='remove', help='Remove a question from the bank.')
+    async def remove(self, ctx, question):
+        if not check_permissions(ctx):
+            return 
+        question = question.strip().replace('\n', '\\n')
+        if question in self.question_bank:
+            self.question_bank.remove(question)
             self.write_out_question_file()
+            response = 'Successfully removed.'
+        else:
+            response = 'Sorry, I couldn\'t find that question.'
+        await ctx.send(response)
 
-            # Reply with confirmation
-            response = f'Added \"{question}\" to the bank of questions.'
-
-        elif command.startswith(LIST_COMMAND):
-            response  = 'Stored questions:\n'
-            for q in self.question_bank:
-                if len(response) + len(q) > CHAR_LIMIT:
-                    await message.channel.send('There are too many questions you absolute lunatics.')
-                    time.sleep(2)
-                    return
-                    # await message.channel.send('...jk here u go')
-                    # await message.channel.send(response)
-                    # response = ''
-                response += ' - ' + q + '\n'
-
-        elif command.startswith(REMOVE_COMMAND):
-            question = command[len(REMOVE_COMMAND):].strip().replace('\n', '\\n')
-            if question in self.question_bank:
-                self.question_bank.remove(question)
-                self.write_out_question_file()
-                response = 'Successfully removed.'
-            else:
-                response = 'Sorry, I couldn\'t find that question.'
-        
-        elif command.startswith(CHANNEL_COMMAND):
-            return # disabled for now!
-            channel = command[len(CHANNEL_COMMAND):].strip()
-            response = 'Sorry, I couldn\'t find the specified channel.'
-            for c in self.guilds[0].channels:
-                if c.name == channel:
-                    self.question_channel = c.id
-                    response = f'Morning circle questions will now be sent to {channel}.'
-
-        await message.channel.send(response)
-
-    async def on_message(self, message):
-        # We don't want the bot to reply to itself
-        if message.author.id == self.user.id:
-            return
-
-        if message.channel.id in COMMAND_CHANNELS or message.author.id in ADMIN_LIST:
-            # Passively listen for messages directed at the bot
-            if message.content.startswith('#'):
-                await self.handle_command(message)
-
-    async def on_ready(self):
-        print(f'{self.user} has connected to Discord!')
-        print('This bot is in the following guilds:')
-        for guild in self.guilds:
-           print(' -', guild.name)
-        await client.change_presence(activity=discord.Game(name='circles and questions | #help'))
-
-client = MorningCircle("questions.txt")
-client.loop.create_task(client.question_background_task())
-client.run(TOKEN)
+bot_cog = MorningCircle(bot, "questions.txt")
+bot.add_cog(bot_cog)
+bot.loop.create_task(bot_cog.question_background_task())
+bot.run(TOKEN)
