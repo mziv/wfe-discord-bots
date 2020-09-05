@@ -47,6 +47,8 @@ async def help(ctx):
     response += '`#add` - add a question to my question bank (make sure to surround it with quotes)\n'
     response += '`#list` - list all of the questions I have stored\n'
     response += '`#remove` - remove a question from my question bank (make sure to surround it with quotes)\n'
+    response += '`#sete` - sets the channel I\'ll echo to\n'
+    response += '`#eto` - Sends echo to channel defined by sete. Message must be in ""\n'
     await ctx.send(response)
     
 
@@ -59,7 +61,7 @@ class MorningCircle(commands.Cog):
 
         print(f'Starting questions: {self.question_bank}')
         self.scheduled_hour = DEFAULT_HOUR
-        self.question_channel = MORNING_CIRCLE_CHANNEL
+        self.echochannel = MORNING_CIRCLE_CHANNEL
 
     def write_out_question_file(self):
         with open(self.question_file, 'w') as out:
@@ -148,6 +150,21 @@ class MorningCircle(commands.Cog):
         else:
             response = 'Sorry, I couldn\'t find that question.'
         await ctx.send(response)
+
+    @commands.command(name='setecho', aliases=['sete'], help='Sets echo location for echoto.')
+    async def setecho(self, ctx, channel):
+        if not check_permissions(ctx):
+            return
+        no_pound = int(channel[2:-1])
+        channel = self.bot.get_channel(no_pound)
+        self.echochannel = channel
+        await ctx.send("Echoto channel set to " + self.echochannel.name)
+
+    @commands.command(name='echoto', aliases=['eto'], help='Sends echo to channel defined by setecho. Message must be in ""')
+    async def echoto(self, ctx, message):
+        if not check_permissions(ctx):
+            return
+        await self.echochannel.send(message)
 
 bot_cog = MorningCircle(bot, "questions.txt")
 bot.add_cog(bot_cog)
