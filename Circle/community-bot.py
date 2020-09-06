@@ -106,6 +106,7 @@ class MorningCircle(commands.Cog):
             self.question_bank.remove(question)
             self.write_out_question_file()
             question = question.replace('\\n', '\n')
+            print("Sending question: " + question)
             response = "Today's morning circle question is: \n" + question
 
         await self.bot.get_channel(MORNING_CIRCLE_CHANNEL).send(response)
