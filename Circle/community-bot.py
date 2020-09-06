@@ -108,7 +108,7 @@ class MorningCircle(commands.Cog):
             question = question.replace('\\n', '\n')
             response = "Today's morning circle question is: \n" + question
 
-        await self.bot.get_channel(self.question_channel).send(response)
+        await self.bot.get_channel(MORNING_CIRCLE_CHANNEL).send(response)
 
     # Commands
     @commands.command(name='add', help='Add a question to my question bank. Surround multi-word entries with "".')
