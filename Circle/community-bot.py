@@ -167,6 +167,23 @@ class MorningCircle(commands.Cog):
             return
         await self.echochannel.send(message)
 
+    @commands.command(name='history', help='Scrape all past questions')
+    async def history(self, ctx):
+        if not check_permissions(ctx):
+            return
+        past_questions = []
+        
+        # get history of messages
+        channel = await self.bot.get_channel(MORNING_CIRCLE_CHANNEL)
+        async for message in channel.history(oldest_first=True):
+            if message.author == self.bot.user:
+                past_questions.append(m.content.replace('\n', '\\n'))
+        
+        with open('past_questions.txt', 'w+') as out:
+            out.write("\n".join(past_questions) + "\n")
+        
+        await ctx.send("Past questions written out to past_questions.txt.")
+
 bot_cog = MorningCircle(bot, "questions.txt")
 bot.add_cog(bot_cog)
 bot.loop.create_task(bot_cog.question_background_task())
