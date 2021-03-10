@@ -171,16 +171,18 @@ class MorningCircle(commands.Cog):
     async def history(self, ctx):
         if not check_permissions(ctx):
             return
-        past_questions = []
-        
+
         # get history of messages
-        channel = await self.bot.get_channel(MORNING_CIRCLE_CHANNEL)
-        async for message in channel.history(oldest_first=True):
-            if message.author == self.bot.user:
-                past_questions.append(m.content.replace('\n', '\\n'))
+        print("Getting history.")
+        channel = self.bot.get_channel(MORNING_CIRCLE_CHANNEL)
+        async for message in channel.history(oldest_first=True, limit=100000):
+            if message.author.id == self.bot.user.id:
+                with open('past_questions.txt', 'a+') as out:
+                    out.write(message.content.replace('\n', '\\n') + "\n")
+                # past_questions.append(message.content.replace('\n', '\\n'))
         
-        with open('past_questions.txt', 'w+') as out:
-            out.write("\n".join(past_questions) + "\n")
+        # with open('past_questions.txt', 'w+') as out:
+        #     out.write("\n".join(past_questions) + "\n")
         
         await ctx.send("Past questions written out to past_questions.txt.")
 
