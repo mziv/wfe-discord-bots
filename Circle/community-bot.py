@@ -18,7 +18,7 @@ with open('../config.py', 'r') as config:
     tokens = json.load(config)
     TOKEN  = tokens['CIRCLE_TOKEN'] 
 
-UTC_OFFSET = 4
+UTC_OFFSET = 3 # 4 after daylight savings
 MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
 ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud  
 COMMAND_CHANNELS = [689806899268550708] # no-kids-garbage-time
