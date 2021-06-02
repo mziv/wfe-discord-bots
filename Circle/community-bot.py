@@ -99,17 +99,16 @@ class MorningCircle(commands.Cog):
 
     async def send_question(self):
         # Select a random question and remove it from the question bank
-        if len(self.question_bank) == 0:
-            response = "Sorry team, I'm out of questions!"
-        else:
+        if len(self.question_bank) > 0:
             question = random.choice(self.question_bank)
             self.question_bank.remove(question)
             self.write_out_question_file()
             question = question.replace('\\n', '\n')
             print("Sending question: " + question)
             response = "Today's morning circle question is: \n" + question
-
-        await self.bot.get_channel(MORNING_CIRCLE_CHANNEL).send(response)
+            await self.bot.get_channel(MORNING_CIRCLE_CHANNEL).send(response)
+        if len(self.question_bank) == 0:
+            await self.bot.get_channel(COMMAND_CHANNELS[0]).send("Heads up, we're out of questions.")
 
     # Commands
     @commands.command(name='add', help='Add a question to my question bank. Surround multi-word entries with "".')
