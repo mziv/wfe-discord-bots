@@ -12,13 +12,14 @@ import json
 import time
 from datetime import datetime
 from datetime import timedelta
+import pytz
 
 # Load token from config file
 with open('../config.py', 'r') as config:
     tokens = json.load(config)
     TOKEN  = tokens['CIRCLE_TOKEN'] 
 
-UTC_OFFSET = 4 
+UTC_OFFSET = 5 
 MORNING_CIRCLE_CHANNEL = 688863645064888400 # general
 ADMIN_LIST = [141368839521697792, 689502497391640681] # Maya, Jud  
 COMMAND_CHANNELS = [689806899268550708] # no-kids-garbage-time
@@ -73,16 +74,17 @@ class MorningCircle(commands.Cog):
 
         while not self.bot.is_closed():
             try:
+                est_tz = pytz.timezone('America/New_York')
                 # Target time is today but at a specific hour
-                target_time = datetime.now().replace(hour=self.scheduled_hour + UTC_OFFSET, minute=0, second=0, microsecond=0)
+                target_time = datetime.now(est_tz).replace(hour=self.scheduled_hour, minute=0, second=0, microsecond=0)
                 # Adjust the current time from UTC to EST
-                current_time = datetime.now()
+                current_time = datetime.now(est_tz)
                 # If the target hour is before now, move target to tomorrow
                 if current_time.hour >= self.scheduled_hour:
                     target_time = target_time + timedelta(days=1)
 
                 # Calculate n seconds until the target time
-                nseconds = (target_time - datetime.now()).total_seconds()
+                nseconds = (target_time - datetime.now(est_tz)).total_seconds()
                 print(f'Seconds to next question: {nseconds}')
                 await asyncio.sleep(nseconds)
 
