@@ -63,7 +63,7 @@ class TallyBot(commands.Cog):
         member = await guild.fetch_member(author.id)
         name = member.nick
         if not name or name == "None":
-            name = author.nick
+            name = author.display_name
         if not name or name == "None":
             name = author.name
         await channel.send(f"{name}: {t_list[0]} {t_list[1]}")
