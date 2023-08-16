@@ -11,10 +11,10 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
-intents.message_content = True
+intents.messages = True
 
 REPORT_CHANNEL = 751878615477649430
-
+GUILD_ID = 751878614970269729
 TRACKING_FILE = "tally.json"
 
 
@@ -31,7 +31,7 @@ async def on_ready():
         print(" -", guild.name)
 
     bot_cog = TallyBot(bot, TRACKING_FILE)
-    await bot.add_cog(bot_cog)
+    bot.add_cog(bot_cog)
 
 
 class TallyBot(commands.Cog):
@@ -59,7 +59,14 @@ class TallyBot(commands.Cog):
         t_list = [t_entry["poop"], t_entry["cry"]]
         random.shuffle(t_list)
         channel = self.bot.get_channel(REPORT_CHANNEL)
-        await channel.send(f"{author.display_name}: {t_list[0]} {t_list[1]}")
+        guild = await self.bot.fetch_guild(GUILD_ID)
+        member = await guild.fetch_member(author.id)
+        name = member.nick
+        if not name or name == 'None':
+            name = author.nick
+        if not name or name == 'None':
+            name = author.name
+        await channel.send(f"{name}: {t_list[0]} {t_list[1]}")
 
     @commands.command(name="poop", help="Add a poop to your tally")
     async def poop(self, ctx):
