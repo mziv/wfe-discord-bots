@@ -62,9 +62,9 @@ class TallyBot(commands.Cog):
         guild = await self.bot.fetch_guild(GUILD_ID)
         member = await guild.fetch_member(author.id)
         name = member.nick
-        if not name or name == 'None':
+        if not name or name == "None":
             name = author.nick
-        if not name or name == 'None':
+        if not name or name == "None":
             name = author.name
         await channel.send(f"{name}: {t_list[0]} {t_list[1]}")
 
@@ -81,6 +81,20 @@ class TallyBot(commands.Cog):
         self.add_tally(ctx.author.name, "cry")
         await ctx.send(f"cry registered.")
         await self.report(ctx.author)
+
+    @commands.command(name="setpoop", help="Set your poop cry tally")
+    async def setpoop(self, ctx, count: int):
+        print(f"setpoop called by {ctx.author}")
+        t_entry = self.tally.get(ctx.author.name, {"poop": 0, "cry": 0})
+        t_entry["poop"] = count
+        self.tally[ctx.author.name] = t_entry
+
+    @commands.command(name="setcry", help="Set your cry tally")
+    async def setcry(self, ctx, count: int):
+        print(f"setcry called by {ctx.author}")
+        t_entry = self.tally.get(ctx.author.name, {"poop": 0, "cry": 0})
+        t_entry["cry"] = count
+        self.tally[ctx.author.name] = t_entry
 
 
 bot.run(TOKEN)
